@@ -41,6 +41,7 @@ import edu.umg.proyecto_gastify.datos.GastifyDatabase
 import edu.umg.proyecto_gastify.datos.GastoRepositorio
 import edu.umg.proyecto_gastify.viewmodel.GastoViewModel
 import edu.umg.proyecto_gastify.viewmodel.GastoViewModelFactory
+import java.math.BigDecimal
 class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz principal de la app
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,6 +90,7 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
                                 gastoViewModel.prepararNuevoGasto()
                                 mostrarNuevoGasto = true
                             },
+                            gastoViewModel = gastoViewModel,
                             modifier = Modifier.padding(innerPadding)
                         )
                     }
@@ -102,6 +104,7 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
 fun PantallaInicio(
 name: String,
 onNuevoGasto: () -> Unit,
+gastoViewModel: GastoViewModel,
 modifier: Modifier = Modifier
 ) {
     Column(
@@ -290,21 +293,64 @@ modifier: Modifier = Modifier
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Estado vacío: se muestra cuando no existen registros.
-                Text(
-                    text = "Aún no hay movimientos",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF263238)
-                )
+                // Muestra el estado de la consulta o los últimos tres gastos.
+                when {
+                    gastoViewModel.cargandoGastos -> {
+                        Text("Cargando movimientos...")
+                    }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                    gastoViewModel.errorCarga != null -> {
+                        Text(
+                            text = gastoViewModel.errorCarga
+                                ?: "No se pudieron cargar los gastos.",
+                            color = Color(0xFFB3261E)
+                        )
+                    }
 
-                // Orienta al usuario para registrar su primer movimiento.
-                Text(
-                    text = "Aquí aparecerán tus ingresos y gastos registrados.",
-                    fontSize = 14.sp,
-                    color = Color(0xFF607080)
-                )
+                    gastoViewModel.gastos.isEmpty() -> {
+                        Text(
+                            text = "Aún no hay movimientos",
+                            color = Color(0xFF263238)
+                        )
+                    }
+
+                    else -> {
+                        gastoViewModel.gastos.take(3).forEach { gasto ->
+                            // Convierte los centavos a quetzales sin perder precisión.
+                            val monto = BigDecimal.valueOf(
+                                gasto.montoCentavos,
+                                2
+                            ).toPlainString()
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = gasto.descripcion,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF263238)
+                                    )
+
+                                    Text(
+                                        text = gasto.categoria,
+                                        fontSize = 14.sp,
+                                        color = Color(0xFF607080)
+                                    )
+                                }
+
+                                Text(
+                                    text = "-Q$monto",
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFB3261E)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
 
