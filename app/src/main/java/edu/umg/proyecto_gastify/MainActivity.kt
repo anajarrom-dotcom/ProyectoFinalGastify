@@ -48,6 +48,9 @@ import edu.umg.proyecto_gastify.viewmodel.IngresoViewModel
 import edu.umg.proyecto_gastify.viewmodel.IngresoViewModelFactory
 import edu.umg.proyecto_gastify.logica.calcularIngresosDelMes
 import edu.umg.proyecto_gastify.logica.obtenerUltimosMovimientos
+import edu.umg.proyecto_gastify.datos.PresupuestoRepositorio
+import edu.umg.proyecto_gastify.viewmodel.PresupuestoViewModel
+import edu.umg.proyecto_gastify.viewmodel.PresupuestoViewModelFactory
 
 class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz principal de la app
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,6 +75,16 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
             this,
             IngresoViewModelFactory(ingresoRepositorio)
         )[IngresoViewModel::class.java]
+
+        // Conecta el presupuesto con la base de datos.
+        val presupuestoRepositorio = PresupuestoRepositorio(
+            baseDatos.presupuestoDao()
+        )
+
+        val presupuestoViewModel = ViewModelProvider(
+            this,
+            PresupuestoViewModelFactory(presupuestoRepositorio)
+        )[PresupuestoViewModel::class.java]
 
         enableEdgeToEdge()
         setContent {
@@ -134,6 +147,7 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
                                 },
                                 gastoViewModel = gastoViewModel,
                                 ingresoViewModel = ingresoViewModel,
+                                presupuestoViewModel = presupuestoViewModel,
                                 modifier = Modifier.padding(innerPadding)
                             )
                         }
@@ -150,6 +164,7 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
         onNuevoIngreso: () -> Unit,
         gastoViewModel: GastoViewModel,
         ingresoViewModel: IngresoViewModel,
+        presupuestoViewModel: PresupuestoViewModel,
         modifier: Modifier = Modifier
     ) {
 
@@ -273,39 +288,12 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White
-                )
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Presupuesto mensual",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF142D4E)
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        text = "Sin configurar",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF3478C0)
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "Establece cuánto quieres gastar este mes.",
-                        fontSize = 14.sp,
-                        color = Color(0xFF607080)
-                    )
-                }
-            }
+            TarjetaPresupuesto(
+                totalGastos = totalGastosMes,
+                gastosDisponibles = !gastoViewModel.cargandoGastos &&
+                        gastoViewModel.errorCarga == null,
+                viewModel = presupuestoViewModel
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -340,7 +328,7 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
-            }
+           }
 
             // Separa los botones de la sección de movimientos.
             Spacer(modifier = Modifier.height(24.dp))

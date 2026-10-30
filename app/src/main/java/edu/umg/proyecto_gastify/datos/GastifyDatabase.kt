@@ -9,8 +9,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 // Declara las tablas y la versión de la base de datos.
 @Database(
-    entities = [GastoEntidad::class, IngresoEntidad::class],
-    version = 2,
+    entities = [
+        GastoEntidad::class,
+        IngresoEntidad::class,
+        PresupuestoEntidad::class
+    ],
+    version = 3,
     exportSchema = true
 )
 abstract class GastifyDatabase : RoomDatabase() {
@@ -19,6 +23,8 @@ abstract class GastifyDatabase : RoomDatabase() {
     abstract fun gastoDao(): GastoDao
 
     abstract fun ingresoDao(): IngresoDao
+
+    abstract fun presupuestoDao(): PresupuestoDao
 
     // Permite obtener la base de datos sin crear instancias repetidas.
     companion object {
@@ -39,6 +45,20 @@ abstract class GastifyDatabase : RoomDatabase() {
             }
         }
 
+        // Actualiza de versión 2 a 3 conservando los datos existentes.
+        private val MIGRACION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+            CREATE TABLE IF NOT EXISTS presupuestos (
+                mes TEXT NOT NULL PRIMARY KEY,
+                montoCentavos INTEGER NOT NULL
+            )
+            """.trimIndent()
+                )
+            }
+        }
+
 
         @Volatile
         private var instancia: GastifyDatabase? = null
@@ -50,8 +70,7 @@ abstract class GastifyDatabase : RoomDatabase() {
                     GastifyDatabase::class.java,
                     "gastify.db"
                 )
-                    .addMigrations(MIGRACION_1_2)
-                    .build()
+                    .addMigrations(MIGRACION_1_2, MIGRACION_2_3)                    .build()
                     .also {
                         instancia = it
                     }
