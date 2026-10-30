@@ -51,6 +51,9 @@ import edu.umg.proyecto_gastify.logica.obtenerUltimosMovimientos
 import edu.umg.proyecto_gastify.datos.PresupuestoRepositorio
 import edu.umg.proyecto_gastify.viewmodel.PresupuestoViewModel
 import edu.umg.proyecto_gastify.viewmodel.PresupuestoViewModelFactory
+import edu.umg.proyecto_gastify.datos.PreferenciasUsuario
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 
 class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz principal de la app
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,9 +89,17 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
             PresupuestoViewModelFactory(presupuestoRepositorio)
         )[PresupuestoViewModel::class.java]
 
+        // Acceso al nombre guardado en el teléfono.
+        val preferenciasUsuario = PreferenciasUsuario(applicationContext)
+
         enableEdgeToEdge()
         setContent {
             Proyecto_GastifyTheme {
+                // Recupera el nombre al iniciar.
+                var nombreUsuario by rememberSaveable {
+                    mutableStateOf(preferenciasUsuario.obtenerNombre())
+                }
+
                 // Controla si mostramos Inicio o Registrar gasto.
                 var mostrarNuevoGasto by rememberSaveable {
                     mutableStateOf(false)
@@ -112,6 +123,16 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
                 ) { innerPadding ->
 
                     when {
+                        nombreUsuario.isBlank() -> {
+                            PantallaBienvenida(
+                                onComenzar = { nombre ->
+                                    preferenciasUsuario.guardarNombre(nombre)
+                                    nombreUsuario = nombre
+                                },
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                        }
+
                         mostrarNuevoGasto -> {
                             PantallaNuevoGasto(
                                 onVolver = {
@@ -134,7 +155,7 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
 
                         else -> {
                             PantallaInicio(
-                                name = "Tony",
+                                name = "nombreUsuario",
                                 onNuevoGasto = {
                                     gastoViewModel.prepararNuevoGasto()
                                     mostrarNuevoIngreso = false
@@ -190,6 +211,27 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
             modifier = modifier
                 .fillMaxSize()
                 .background(Color(0xFFF5F7FA))
+                .drawBehind {
+                    // Detalle verde suave en la esquina superior izquierda.
+                    drawCircle(
+                        color = Color(0xFFDDF2E9),
+                        radius = 240.dp.toPx(),
+                        center = Offset(
+                            x = (-45).dp.toPx(),
+                            y = 75.dp.toPx()
+                        )
+                    )
+
+                    // Detalle verde suave en la esquina inferior derecha.
+                    drawCircle(
+                        color = Color(0xFFE3F3EC),
+                        radius = 190.dp.toPx(),
+                        center = Offset(
+                            x = size.width + 65.dp.toPx(),
+                            y = size.height - 40.dp.toPx()
+                        )
+                    )
+                }
                 .verticalScroll(rememberScrollState())
                 .padding(24.dp)
         ) {
@@ -429,7 +471,7 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFE5F1FC)
+                    containerColor = Color(0xFFE8F5EE)
                 )
             ) {
                 // Organiza el título, la frase y el autor verticalmente.
@@ -481,7 +523,7 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
             text = "Gastify",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF142D4E)
+            color = Color(0xFF218563)
         )
 
         Spacer(modifier = Modifier.height(24.dp))
