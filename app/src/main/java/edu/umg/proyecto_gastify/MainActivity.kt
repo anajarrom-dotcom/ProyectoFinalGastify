@@ -54,6 +54,7 @@ import edu.umg.proyecto_gastify.viewmodel.PresupuestoViewModelFactory
 import edu.umg.proyecto_gastify.datos.PreferenciasUsuario
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.material3.TextButton
 
 class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz principal de la app
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -105,17 +106,29 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
                     mutableStateOf(false)
                 }
 
+                var cambiarNombre by rememberSaveable {
+                    mutableStateOf(false)
+                }
+
                 var mostrarNuevoIngreso by rememberSaveable {
                     mutableStateOf(false)
                 }
 
-                // Regresa a Inicio al usar Atrás de Android.
-                // Regresa a Inicio desde cualquiera de los formularios.
+                var mostrarHistorial by rememberSaveable {
+                    mutableStateOf(false)
+                }
+
+                // Permite cancelar y regresar a Inicio.
                 BackHandler(
-                    enabled = mostrarNuevoGasto || mostrarNuevoIngreso
+                    enabled = mostrarNuevoGasto ||
+                            mostrarNuevoIngreso ||
+                            cambiarNombre ||
+                            mostrarHistorial
                 ) {
                     mostrarNuevoGasto = false
                     mostrarNuevoIngreso = false
+                    cambiarNombre = false
+                    mostrarHistorial = false
                 }
 
                 Scaffold(
@@ -123,11 +136,12 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
                 ) { innerPadding ->
 
                     when {
-                        nombreUsuario.isBlank() -> {
+                        nombreUsuario.isBlank() || cambiarNombre -> {
                             PantallaBienvenida(
                                 onComenzar = { nombre ->
                                     preferenciasUsuario.guardarNombre(nombre)
                                     nombreUsuario = nombre
+                                    cambiarNombre = false
                                 },
                                 modifier = Modifier.padding(innerPadding)
                             )
@@ -153,9 +167,33 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
                             )
                         }
 
+                        mostrarHistorial -> {
+                            PantallaHistorial(
+                                movimientos = obtenerUltimosMovimientos(
+                                    gastos = gastoViewModel.gastos,
+                                    ingresos = ingresoViewModel.ingresos,
+                                    limite = Int.MAX_VALUE
+                                ),
+                                cargando = gastoViewModel.cargandoGastos ||
+                                        ingresoViewModel.cargandoIngresos,
+                                error = gastoViewModel.errorCarga
+                                    ?: ingresoViewModel.errorCarga,
+                                onVolver = {
+                                    mostrarHistorial = false
+                                },
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                        }
+
                         else -> {
                             PantallaInicio(
-                                name = "nombreUsuario",
+                                name = nombreUsuario,
+                                onVerHistorial = {
+                                    mostrarHistorial = true
+                                },
+                                onCambiarNombre = {
+                                    cambiarNombre = true
+                                },
                                 onNuevoGasto = {
                                     gastoViewModel.prepararNuevoGasto()
                                     mostrarNuevoIngreso = false
@@ -181,6 +219,8 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
     @Composable
     fun PantallaInicio(
         name: String,
+        onVerHistorial: () -> Unit,
+        onCambiarNombre: () -> Unit,
         onNuevoGasto: () -> Unit,
         onNuevoIngreso: () -> Unit,
         gastoViewModel: GastoViewModel,
@@ -236,6 +276,15 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
                 .padding(24.dp)
         ) {
             EncabezadoInicio(nombre = name)
+
+            // Abre la bienvenida para cambiar el nombre.
+            TextButton(onClick = onCambiarNombre) {
+                Text(
+                    text = "Cambiar nombre",
+                    color = Color(0xFF218563)
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             Card(
@@ -393,6 +442,14 @@ class MainActivity : ComponentActivity() { // Esta clase muestra la interfaz pri
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF142D4E)
                     )
+
+                    // Abre la lista completa de ingresos y gastos.
+                    TextButton(onClick = onVerHistorial) {
+                        Text(
+                            text = "Ver todos →",
+                            color = Color(0xFF218563)
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 

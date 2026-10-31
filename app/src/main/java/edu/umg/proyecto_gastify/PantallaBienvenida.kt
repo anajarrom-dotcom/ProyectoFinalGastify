@@ -165,14 +165,6 @@ fun PantallaBienvenida(
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
-
-            Text(
-                text = "Tus datos se guardan en este teléfono",
-                fontSize = 13.sp,
-                color = Color(0xFF607080),
-                textAlign = TextAlign.Center
-            )
         }
     }
 }

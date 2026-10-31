@@ -68,7 +68,8 @@ fun calcularIngresosDelMes(ingresos: List<Ingreso>): BigDecimal {
 // Combina ambos tipos de movimiento y devuelve los tres más recientes.
 fun obtenerUltimosMovimientos(
     gastos: List<Gasto>,
-    ingresos: List<Ingreso>
+    ingresos: List<Ingreso>,
+    limite: Int = 3
 ): List<MovimientoResumen> {
     val movimientos = mutableListOf<MovimientoResumen>()
 
@@ -96,5 +97,7 @@ fun obtenerUltimosMovimientos(
         )
     }
 
-    return movimientos.sortedByDescending { it.fechaMillis }.take(3)
+    return movimientos
+        .sortedByDescending { it.fechaMillis }
+        .take(limite)
 }
